@@ -6,19 +6,26 @@ import random
 import math
 
 class DreidelGame:
-    def __init__(self):
+    def __init__(self, numPlayer, startCoin):
         # The number of coins on the table
         self.coinTable = 0
 
         # Each player's coins
-        self.playerCoins = [5,5,5,5,5]
+        self.playerCoins = []
+        for i in range(numPlayer):
+            self.playerCoins.append(startCoin)
+
+        self.dreidelSpin = 0
 
     def PlayerPutCoinOnTable(self, playerIndex):
-        # Take away one coin
-        self.playerCoins[playerIndex] -= 1
+        if self.playerCoins[playerIndex] > 0:
+            # Take away one coin
+            self.playerCoins[playerIndex] -= 1
 
-        # Add coin to the table
-        self.coinTable += 1
+            # Add coin to the table
+            self.coinTable += 1
+        else:
+            self.playerCoins[playerIndex] = -1
 
     def StartGame(self):
         for i in range(len(self.playerCoins)):
@@ -29,7 +36,8 @@ class DreidelGame:
 
         turn = 1
 
-        while self.GameNotOver() or turn != 1000:
+        while self.GameNotOver():
+
             result = self.SpinTheDreidel()
 
             if result == "Nun":
@@ -45,32 +53,48 @@ class DreidelGame:
                 self.playerCoins[activePlayer] += halfTable
                 self.coinTable -= halfTable
 
-            print(self.playerCoins)
             activePlayer += 1
             if activePlayer == len(self.playerCoins):
+                while -1 in self.playerCoins:
+                    self.playerCoins.remove(-1)
                 activePlayer = 0
                 turn += 1
 
-        return turn
+        return self.PlayTime()
 
 
 
     def GameNotOver(self):
-        for player in self.playerCoins:
-            if player ==  sum(self.playerCoins):
-                return False
+        if len(self.playerCoins) != 1:
+            return True
 
-        return True
+        return False
 
     def SpinTheDreidel(self):
+        self.dreidelSpin += 1
         dreidel = ["Gimel", "Shin", "Nun", "Hay"]
         return random.choice(dreidel)
 
+    def PlayTime(self):
+        return 9 * self.dreidelSpin
+
+
+def RunExperiment(replicate, numPlayer, numCoins):
+    totalTime = 0
+    for i in range(replicate):
+        # create a game
+        myGame = DreidelGame(numPlayer, numCoins)
+        myGame.StartGame()
+        totalTime += myGame.PlayGame()
+
+    return float(totalTime)/float(replicate)
+
 if __name__ == "__main__":
 
-    for i in range(1000):
-        # create a game
-        myGame = DreidelGame()
-        myGame.StartGame()
-        print(myGame.PlayGame())
+    numPlayer = 2
+
+    for numCoins in range(1, 20):
+        averageTime = RunExperiment(1000, numPlayer, numCoins)
+        print("coin = %d   average=%f"%(numCoins ,averageTime))
+
 
